@@ -166,6 +166,27 @@ watch -n 1
       if (not connected) break;
       or break when scp/ssh commands fail somehow
 
+//Send file to server. If sent succesfully, move it out of them temp directory. If moved successfully, delete local copy
+sendFile.sh (filename):
+  scp $1 (server):/tmp/$1
+  if [ $? = 0 ]; then
+    ssh (server) 'mv /tmp/$1 /$1'
+    if[ $? = 0 ]; then
+      rm $1
+    fi
+  fi
+
+
+connection.sh:
+  watch -n 1
+    wget -q --tries=2 --timeout=2 --spider google.com
+    if [[ $? -eq 0 && ! -e /mnt/sd/connected ]]; then   #if connected and previously wasn't
+      touch /mnt/sd/connected
+      ./filesend.sh
+      
+    
+    
+      
       
 
       

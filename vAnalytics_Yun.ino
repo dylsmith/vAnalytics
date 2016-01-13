@@ -16,7 +16,8 @@ void setup() {
     OBDSetup();
   #endif
 
-  execShell("rm /mnt/sd/data/tmp/*");
+  execShell("rm /mnt/sd/tmp/*");
+  Process p; p.begin("/mnt/sd/scripts/startup.sh"); p.runAsynchronously();
 
   environmentChecks();
   pinMode(13, OUTPUT);     

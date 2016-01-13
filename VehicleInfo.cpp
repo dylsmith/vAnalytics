@@ -63,7 +63,7 @@ void readAllPIDs(){
    
   //If minute has changed, the old file is done. 
   if(timestamp % 60 == 59)
-    execShell("mv /mnt/sd/tmp/" + String(minute) + " /mnt/sd/tmp/" + String(minute));
+    execShell("mv /mnt/sd/tmp/" + String(minute) + " /mnt/sd/data/" + String(minute));
   
 }
 
