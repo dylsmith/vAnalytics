@@ -25,11 +25,14 @@ void error(String msg){
   while (1);
 }
 
+//TODO: Remove this and its header proto once DS1307 is implemented
+/*
 uint32_t ts = 10000;
 uint32_t getTimeStamp(){
   //TODO: replace ts with seconds since epoch
   return ts++; //Every call, one 'second' will pass
 }
+*/
 
 int dt = 0;
 int getData(){

@@ -10,8 +10,8 @@ void t_end();
 //Prints the error to Serial, /mnt/sd/errors.txt, and loops forever
 void error(String msg = "");
 
-//{laceholders to emulate getting real data
-uint32_t getTimeStamp();
+//placeholders to emulate getting real data
+//uint32_t getTimeStamp();
 int getData();
 
 //Make sure the environment is sane..

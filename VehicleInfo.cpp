@@ -1,4 +1,5 @@
 #include "VehicleInfo.h"
+#include "DSTime.h"
 
 //OBD comms are on SoftwareSerial(A10,A11)
 COBD obd;
@@ -25,16 +26,19 @@ void OBDSetup(){
 
 void readAllPIDs(){
   //Open the file, with name <minutes since epoch>
-  uint32_t timestamp = getTimeStamp();
-  uint16_t minute = timestamp / 60;
+  String timestamp = minuteTimeStamp();
   
-  String fileName = "/mnt/sd/tmp/" + String(minute);
+  String fileName = "/mnt/sd/tmp/" + timestamp;
+  #ifdef DEBUG
+    //Serial.println("Writing to " + timestamp);
+  #endif
+  
   File output = FileSystem.open(fileName.c_str(), FILE_APPEND);
   if(!output)
     error("Error opening " + fileName);
     
   //Record seconds since the start of the minute
-  dataBuffer[0] = timestamp % 60;
+  dataBuffer[0] = tm.Second;
 
   //Record each data point
   int result;  
@@ -58,12 +62,8 @@ void readAllPIDs(){
     error(F("Wrote wrong size data"));
 
   //TODO: Update a second file, counting the number of successful buffer
-  //writes to the temp file. Remove it after the minute has passed
-
-   
-  //If minute has changed, the old file is done. 
-  if(timestamp % 60 == 59)
-    execShell("mv /mnt/sd/tmp/" + String(minute) + " /mnt/sd/data/" + String(minute));
+  //writes to the temp file. When starting up, trim the file in the tmp
+  //directory based on this, and move it to the data directory to be sent out
   
 }
 

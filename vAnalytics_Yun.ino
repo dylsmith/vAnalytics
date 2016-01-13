@@ -2,6 +2,8 @@
 #include "Globals.h"
 #include "VehicleInfo.h"
 #include "Utility.h"
+#include "DSTime.h"
+
 
 void setup() {
   delay(500);
@@ -16,34 +18,40 @@ void setup() {
     OBDSetup();
   #endif
 
+  Serial.println(F("Filesystem, serial, bridge started"));
   execShell("rm /mnt/sd/tmp/*");
-  Process p; p.begin("/mnt/sd/scripts/startup.sh"); p.runAsynchronously();
+  //Process p; p.begin("/mnt/sd/scripts/startup.sh"); p.runAsynchronously();
+  Process startup; startup.runShellCommandAsynchronously("/mnt/sd/scripts/startup.sh");
 
   environmentChecks();
   pinMode(13, OUTPUT);     
-  Serial.println(F("Filesystem, serial, bridge started"));
-
 
   checkVehicleInfo();  
+  StartDS1307(); 
 }
 
 void loop() {
-  unsigned long timer = millis() - 1000;  
-  while (1)
-  {
-    if (millis() - timer >= 1000) //TODO: change this to monitor the RTC instead
-    {
-      unsigned long startOfLoop = millis();
-      timer += 1000;
 
-      //do stuff here
-      readAllPIDs();
-
+  //Wait for the start of a new second
+  if(secondChanged()){
+    unsigned long timer = millis();
+  
+    readAllPIDs();
+    uint8_t prevMinute;
+    if(minuteChanged(&prevMinute)){
+      String Name = minuteTimeStamp(prevMinute);
       #ifdef DEBUG
-      Serial.print(F("Collecting data took "));
-      Serial.print(millis() - startOfLoop);
-      Serial.println(F(" ms"));
+        Serial.println(Name + " done");
       #endif
+      execShell("mv /mnt/sd/tmp/" + Name + " /mnt/sd/data/" + Name);
     }
+  
+    #ifdef DEBUG
+      Serial.print(F("Main loop took "));
+      Serial.print(millis() - timer);
+      Serial.println(F(" ms"));
+    #endif
+
+  
   }
 }

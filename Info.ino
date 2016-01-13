@@ -1,18 +1,11 @@
 /*
-  /mnt/sd/
-    errors.txt
-    VI.txt or VI
-    debug
-
-  /mnt/sd/data/
-    <minutes since epoch>
-    
+   
    Todo:
      -Remove the code that switches back to AP mode when wifi can't connect (wifi-alive-or-dead.py or something). 
          Make the arduino wait for wifi instead. Should be easy
          
      -Implement an RTC 
-        Linux side: write wifi connected/disconnected status to a file
+        //Linux side: write wifi connected/disconnected status to a file
         Arduino side: 
           When a sync is needed, monitor internet connectivity status
           When connected, request internet time from linux, store to RTC
@@ -29,7 +22,7 @@
         Check available space before writing a new file
         If it's too small delete the oldest file
 
-
+      -Monitor the status of connected.sh and dataSync.sh. Ensure they're always runnig
         
      -Build a system to automatically connect to WiFi networks when in range (later)
         Use modified existing shell scripts, maybe
@@ -42,7 +35,7 @@
         Use this to identify each vehicle by VIN
         When receiving data files, the validPIDs in the VI file are used to decode the data file
 
-     -Linux script:
+     //-Linux script:
         Every few seconds, check internet connectivity
         If connected:
           Write connection status to a file, for use by the arduino side
