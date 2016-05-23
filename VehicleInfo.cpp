@@ -27,9 +27,9 @@ void OBDSetup(){
 
 void readAllPIDs(){
   //Open the file, with name <minutes since epoch>  
-  String fileName = "/mnt/sd/tmp/" + minuteTimeStamp();
+  String fileName = "/mnt/sd/data/tmp/" + minuteTimeStamp();
   
-  File output = FileSystem.open(("/mnt/sd/tmp/" + minuteTimeStamp()).c_str(), FILE_APPEND);
+  File output = FileSystem.open(("/mnt/sd/data/tmp/" + minuteTimeStamp()).c_str(), FILE_APPEND);
   if(!output)
     error("Error opening " + fileName);
     
@@ -129,16 +129,16 @@ void createVehicleInfo(){
 void checkDebugModeSwitch(){
 
   //Empty file debug exists if we last ran in debug mode
-  bool prevState = FileSystem.exists("/mnt/sd/debug");
+  bool prevState = FileSystem.exists("/mnt/sd/flags/debug");
 
   #ifdef DEBUG
     if(prevState == false){
-      execShell(F("touch /mnt/sd/debug"));
+      execShell(F("touch /mnt/sd/flags/debug"));
       FileSystem.remove("/mnt/sd/VI.txt");
     }
   #else
     if(prevState == true){
-      FileSystem.remove("/mnt/sd/debug");
+      FileSystem.remove("/mnt/sd/flags/debug");
       FileSystem.remove("/mnt/sd/VI.txt");
     }
   #endif    
