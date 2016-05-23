@@ -10,6 +10,8 @@
 //Initializes the obd adapter
 void OBDSetup();
 
+bool PIDisValid(byte PID);
+
 //For each valid PID, sends an OBD request and writes the result to the SD card.
 //File format is: one byte for seconds since this minute started, two bytes for each data point read
 //Each file stores one minute of time, and the filename represents minutes since epoch

@@ -4,6 +4,7 @@
 //OBD comms are on SoftwareSerial(A10,A11)
 COBD obd;
 
+
 //All PIDs apparently made available by the OBD-II UART adapter I'm using
 byte allPIDs[] = {
 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 
@@ -25,15 +26,10 @@ void OBDSetup(){
 }
 
 void readAllPIDs(){
-  //Open the file, with name <minutes since epoch>
-  String timestamp = minuteTimeStamp();
+  //Open the file, with name <minutes since epoch>  
+  String fileName = "/mnt/sd/tmp/" + minuteTimeStamp();
   
-  String fileName = "/mnt/sd/tmp/" + timestamp;
-  #ifdef DEBUG
-    //Serial.println("Writing to " + timestamp);
-  #endif
-  
-  File output = FileSystem.open(fileName.c_str(), FILE_APPEND);
+  File output = FileSystem.open(("/mnt/sd/tmp/" + minuteTimeStamp()).c_str(), FILE_APPEND);
   if(!output)
     error("Error opening " + fileName);
     
@@ -44,7 +40,7 @@ void readAllPIDs(){
   int result;  
   for(byte i = 0; i < validPIDCount; i++){
     #ifdef DEBUG
-      result = getData();
+      result = 0x50;
     #else
       obd.read(validPIDs[i], result);
     #endif
@@ -53,13 +49,18 @@ void readAllPIDs(){
   }
 
   //Write data buffer to the file
+  //Set pin 13 high when writing to file
   digitalWrite(13, HIGH);
   int writeSize = output.write(dataBuffer, BUFFER_SIZE);
+  output.flush();
   digitalWrite(13, LOW);
+  
   output.close();
 
+  #ifdef DEBUG
   if(writeSize != BUFFER_SIZE)
     error(F("Wrote wrong size data"));
+  #endif
 
   //TODO: Update a second file, counting the number of successful buffer
   //writes to the temp file. When starting up, trim the file in the tmp
@@ -67,12 +68,21 @@ void readAllPIDs(){
   
 }
 
+bool PIDisValid(byte PID){
+  #ifdef DEBUG
+    return true;
+  #else
+    int i;
+    return OBD.read(pid, i);
+  #endif
+}
+
 void createVehicleInfo(){
   //Open VI. Once complete, rename VI.txt. 
   File vinfo = FileSystem.open("/mnt/sd/VI", FILE_APPEND);
 
   //Get VIN
-  byte vin[VIN_LENGTH];
+  char vin[VIN_LENGTH];
   #ifdef DEBUG
     for(byte i = 0; i < VIN_LENGTH; i++)
       vin[i] = 48; //'a'
@@ -83,10 +93,15 @@ void createVehicleInfo(){
 
   //Write VIN to file. 
   //byte writeSize = vinfo.write(reinterpret_cast<const byte*>(vin), VIN_LENGTH); //Convert from char (from OBD reader) to const unsigned char (for file write)
+  digitalWrite(13, HIGH);
   byte writeSize = vinfo.write((byte*)vin, VIN_LENGTH); //Convert from char (from OBD reader) to const unsigned char (for file write)
   vinfo.flush();
+  digitalWrite(13, LOW);
+
+  #ifdef DEBUG
   if(writeSize != VIN_LENGTH)
     error(F("VIN not printed to file properly"));
+  #endif
     
   //for each possible PID, check if the request is successful.
   //if so, store it in validPIDs and increment validPIDCount
@@ -95,17 +110,11 @@ void createVehicleInfo(){
   validPIDCount = 0;
   for(byte i = 0; i < NUM_PIDS; i++){
     byte PID = allPIDs[i];
-    #ifdef DEBUG
+    if(PIDisValid(PID)){
       vinfo.write(PID);
       validPIDs[validPIDCount] = PID;
       ++validPIDCount;
-    #else
-      if(obd.read(PID, result)){
-        vinfo.write(PID);
-        validPIDs[validPIDCount] = PID;
-        ++validPIDCount;
-      }
-    #endif
+    }
   }
   
   vinfo.close();
@@ -118,23 +127,21 @@ void createVehicleInfo(){
 }
 
 void checkDebugModeSwitch(){
-  #ifdef DEBUG
-    bool debug = true;
-  #else
-    bool debug = false;
-  #endif;
 
   //Empty file debug exists if we last ran in debug mode
   bool prevState = FileSystem.exists("/mnt/sd/debug");
 
-  if(debug == true && prevState == false){
-    execShell(F("touch /mnt/sd/debug"));
-    FileSystem.remove("/mnt/sd/VI.txt");
-  }
-  else if(debug == false && prevState == true){
-    FileSystem.remove("/mnt/sd/debug");
-    FileSystem.remove("/mnt/sd/VI.txt");
-  }      
+  #ifdef DEBUG
+    if(prevState == false){
+      execShell(F("touch /mnt/sd/debug"));
+      FileSystem.remove("/mnt/sd/VI.txt");
+    }
+  #else
+    if(prevState == true){
+      FileSystem.remove("/mnt/sd/debug");
+      FileSystem.remove("/mnt/sd/VI.txt");
+    }
+  #endif    
 }
 
 void loadVehicleInfo(){

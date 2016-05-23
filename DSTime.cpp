@@ -14,41 +14,30 @@ void updateTimeStamp(){
   }
 }
 
-uint8_t currentSecond;
-bool secondChanged(uint8_t* prevSecond){
+byte g_prevMinute;
+byte g_prevSecond;
+bool secondChanged(){
+  g_prevMinute = tm.Minute;
+  g_prevSecond = tm.Second;
   updateTimeStamp();
-  if(currentSecond == tm.Second){
-    return false;
-  }
-  else{
-    if(prevSecond)
-      *prevSecond = currentSecond;
-    currentSecond = tm.Second;
-    return true;
-  }
+  return g_prevSecond != tm.Second;
 }
 
-uint8_t currentMinute;
-bool minuteChanged(uint8_t* prevMinute){
-  updateTimeStamp();
-  if(currentMinute == tm.Minute){
-    return false;
-  }
-  else{
-    if(prevMinute)
-      *prevMinute = currentMinute;
-    currentMinute = tm.Minute;
-    return true;
-  }
+bool minuteChanged(){
+  return g_prevMinute != tm.Minute;
 }
 
-String minuteTimeStamp(uint8_t Minute){
-  if(Minute == (uint8_t)-1){
-  return twoDigits(tmYearToCalendar(tm.Year)) + twoDigits(tm.Month) + twoDigits(tm.Day) + twoDigits(tm.Hour) + twoDigits(tm.Minute);
+String minuteTimeStamp(char Minute){
+  if(Minute == -1){
+    return twoDigits(tmYearToCalendar(tm.Year)) + twoDigits(tm.Month) + twoDigits(tm.Day) + twoDigits(tm.Hour) + twoDigits(tm.Minute);
   }
   else{
     return twoDigits(tmYearToCalendar(tm.Year)) + twoDigits(tm.Month) + twoDigits(tm.Day) + twoDigits(tm.Hour) + twoDigits(Minute);
   }
+}
+
+String secondTimeStamp(){
+  return minuteTimeStamp() + twoDigits(tm.Second);
 }
 
 
@@ -63,7 +52,5 @@ String twoDigits(int n){
 
 void StartDS1307(){
   updateTimeStamp();
-  currentSecond = tm.Second;
-  currentMinute = tm.Minute;
 }
 

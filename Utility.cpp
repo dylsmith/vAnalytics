@@ -1,47 +1,32 @@
+#include "Globals.h"
 #include "Utility.h"
+#include "DSTime.h"
 
-unsigned long timer_t = 0;
+unsigned long t_timer = 0;
 void t_start(){
-  #ifdef DEBUG
-  timer_t = millis();
-  #endif
+  t_timer = millis();
 }
 
 void t_end(){
-  #ifdef DEBUG
-  Serial.print(timer_t = millis() - timer_t);
-  #endif
+  logprintln(String(millis() - t_timer));
+  t_timer = millis();
 }
 
 void error(String msg){
   #ifdef DEBUG
-    Serial.println(msg);
+    Serial.println("Error: " + msg);
   #endif
   
   File errorFile = FileSystem.open("/mnt/sd/errors.txt", FILE_APPEND);
-  errorFile.println(msg);
+  errorFile.println(secondTimeStamp() + ": " + msg);
   errorFile.close();
   
   while (1);
 }
 
-//TODO: Remove this and its header proto once DS1307 is implemented
-/*
-uint32_t ts = 10000;
-uint32_t getTimeStamp(){
-  //TODO: replace ts with seconds since epoch
-  return ts++; //Every call, one 'second' will pass
-}
-*/
-
-int dt = 0;
-int getData(){
-  return 0x3030;
-  //return dt++;
-}
-
 //Make sure the environment is sane..
 void environmentChecks(){
+  
   /*
    * Assumptions:  
    * -A byte is.. one byte. Lots of byte-arrays need this
@@ -49,11 +34,13 @@ void environmentChecks(){
    *   isnt 100% necessary as the higherbits just shoulen't be used anyways
    * -Bytes are unsigned chars (not signed chars)
    */
+   #ifdef DEBUG
   if( sizeof(int) != 2 || 
-      sizeof(byte) != 1 || 
-      (byte)130 != (unsigned char)130
-    )
+    sizeof(byte) != 1 || 
+    (byte)130 != (unsigned char)130 ){
     error(F("Environment checks failed"));
+  }
+  #endif
 }
 
 //runs a shell command and prints the response
@@ -62,11 +49,26 @@ void execShell(String command){
   p.runShellCommand(command);
 
   #ifdef DEBUG
-    bool printed = p.available() > 0;
+  if(p.available() > 0){
+    String s = "";
     while (p.available() > 0)
-      Serial.print(char(p.read()));
-    if(printed) Serial.println();
+      s += p.read();
+    logprintln(s);
+  }
   #endif
+}
+
+void logprint(String s){
+
+  #ifdef DEBUG
+    Serial.print(s);
+  #endif
+  File f = FileSystem.open("/mnt/sd/log.txt", FILE_APPEND);
+  f.print(s);
+  f.close();
+}
+void logprintln(String s){
+  logprint(s + "\n");
 }
 
 

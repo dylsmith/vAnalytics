@@ -1,0 +1,94 @@
+#!/bin/sh
+
+UCI="/sbin/uci"
+log="/var/log/easy-wifi-switch.log"
+
+# set_or_delete is borrowed from /etc/init.d/handle_wifi_reset
+set_or_delete() {
+    key=$1
+    value=$2
+	
+    if [ "x$value" == "x" ]
+    then
+	$UCI delete "$key"
+    else
+	$UCI set "$key=$value"
+    fi
+}
+
+# check config exist
+wificfg_a="/mnt/sda1/wifi.cfg"
+wificfg_b="/mnt/sdb1/wifi.cfg"
+cfg_load=false
+
+# load config
+if [ -f "$wificfg_a" ] ; then
+    source "$wificfg_a"
+    cfg_load=true
+fi
+
+if [ -f "$wificfg_b" ] ; then
+    source "$wificfg_b"
+    cfg_load=true
+fi
+
+if [ "$cfg_load" = true ] ; then
+    # check if we are coming out of a self-induced reboot
+    if [ -f /root/easy-wifi-switch-reboot ] ; then
+	rm /root/easy-wifi-switch-reboot
+	touch /root/easy-wifi-switch-finished
+	
+	echo "all done!" >> $log
+	exit 0
+    fi
+
+    # check if the config settings are any different from the UCI ones
+    my_ssid=`/sbin/uci "get" "wireless.@wifi-iface[0].ssid"`
+    my_key=`/sbin/uci "get" "wireless.@wifi-iface[0].key"`
+    my_enc=`/sbin/uci "get" "wireless.@wifi-iface[0].encryption"`
+
+    if [ "$my_ssid" = "$ssid" ] && [ "$my_key" = "$key" ] && [ "$my_enc" = "$encryption" ] ; then
+	echo "no change" >> $log
+	exit 0
+    fi
+
+    # otherwise do the actual switching
+    echo "Updating wifi settings:" > $log #note log reset
+    echo " - SSID: $ssid" >> $log
+    echo " - Key: $key" >> $log
+    echo " - Encryption: $encryption" >> $log
+    echo " " >> $log
+    
+    # remove the "success" file if it exists
+    rm /root/easy-wifi-switch-finished
+    
+    # apply to OpenWrt UCI
+    # WIRELESS: see http://wiki.openwrt.org/doc/uci/wireless
+    $UCI "set" "wireless.@wifi-device[0].channel=auto"
+
+    $UCI "set" "wireless.@wifi-iface[0].mode=sta"
+    $UCI "set" "wireless.@wifi-iface[0].ssid=$ssid"
+    $UCI "set" "wireless.@wifi-iface[0].encryption=$encryption"
+    $UCI "set" "wireless.@wifi-iface[0].key=$key"
+
+    # NETWORK
+    $UCI "delete" "network.lan.ipaddr"
+    $UCI "delete" "network.lan.netmask"
+
+    PROTO=`$UCI get "arduino.lan.proto"`
+    set_or_delete "network.lan.proto" $PROTO
+
+    # DHCP
+    $UCI "delete" "dhcp.@dnsmasq[0].interface"
+    $UCI "add_list" "dhcp.@dnsmasq[0].interface=lo"
+
+    # COMMIT
+    $UCI commit
+
+    # RESTART
+    echo "rebooting" >> $log
+    /bin/touch /root/easy-wifi-switch-reboot
+    /sbin/reboot
+else
+    echo "wifi.cfg was not found. Leaving wifi alone." >> $log
+fi

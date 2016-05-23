@@ -3,18 +3,22 @@
 #include <DS1307RTC.h>
 
 //Updates tmElements_t tm
+extern tmElements_t tm;
 void updateTimeStamp();
 
-extern tmElements_t tm;
-//Return true if the minute or second has changed since the last time this was called
-//If provided with a pointer, sets it to the previous value
-bool minuteChanged(uint8_t* = NULL);
-bool secondChanged(uint8_t* = NULL);
+//Updates the timestamp and returns true if the second has changed
+bool secondChanged();
 
-//Returns a string matching YYYYMMDDHH. Uses the Minute argument, if provided
-String minuteTimeStamp(uint8_t Minute = tm.Minute);
+//Returns true if the last secondChanged() call also changed the minute
+bool minuteChanged();
 
-//Converts a 0-9 into 00-09
+//Returns a string matching YYYYMMDDHHMM. Uses the Minute argument, if provided
+String minuteTimeStamp(char Minute = -1);
+
+//Returns a string matching YYYYMMDDHHMMSS
+String secondTimeStamp();
+
+//Converts a 0 to 00, 8 to 08, etc.
 String twoDigits(int n);
 
 //Initializes values for minuteChanged and secondChanged. 

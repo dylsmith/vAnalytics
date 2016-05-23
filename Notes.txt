@@ -1,3 +1,21 @@
+/* Thanks:
+ *  
+ *  https://github.com/sambrenner/yun-easy-wifi-switch
+ *  
+ */
+
+
+/*
+ * 
+ * TODO:
+ * Ensure that the connection is re-established after leaving the wifi network
+ * Synchronize RTC with internet time when connected (Arduino calls a shell commant to get time string, feeds into RTC)
+ * Test with emulator software
+ * Attach a VIN to each uploaded file, synchronize VINs to the server
+ * Write file decoding script for server
+ * Final stability tests
+ */
+
 /*
    
    Todo:
